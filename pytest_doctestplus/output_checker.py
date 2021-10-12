@@ -111,7 +111,7 @@ class OutputChecker(doctest.OutputChecker):
         False
         """
         a, b = float(a), float(b)
-        return self.isclose(a, b, rtol=self.rtol, atol=self.atol)
+        return np.allclose(a, b, rtol=self.rtol, atol=self.atol, equal_nan=True)
 
     def startswith(self, arr, prefix):
         """
@@ -125,10 +125,7 @@ class OutputChecker(doctest.OutputChecker):
             return True
         if len(arr) < len(prefix):
             return False
-        for a, b in zip(arr, prefix):
-            if not self.equal_floats(a, b):
-                return False
-        return True
+        return np.allclose(arr, prefix, rtol=self.rtol, atol=self.atol, equal_nan=True)
 
     def endswith(self, arr, postfix):
         """
@@ -309,7 +306,3 @@ class OutputChecker(doctest.OutputChecker):
         # new-style class.
         return self._original_output_checker.output_difference(
             self, want, got, flags)
-
-    def isclose(self, a, b, rtol=1e-05, atol=1e-08, equal_nan=True):
-        return np.isclose(a, b, rtol=rtol, atol=atol, equal_nan=equal_nan)
-
