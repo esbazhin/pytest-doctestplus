@@ -6,7 +6,7 @@ normalizations of Python expression output.  See the docstring on
 
 import doctest
 import re
-import math
+import numpy as np
 
 
 # Much of this code, particularly the parts of floating point handling, is
@@ -111,7 +111,7 @@ class OutputChecker(doctest.OutputChecker):
         False
         """
         a, b = float(a), float(b)
-        return isclose(a, b, rtol=self.rtol, atol=self.atol)
+        return self.isclose(a, b, rtol=self.rtol, atol=self.atol)
 
     def startswith(self, arr, prefix):
         """
@@ -283,8 +283,23 @@ class OutputChecker(doctest.OutputChecker):
 
         # Can't use super here because doctest.OutputChecker is not a
         # new-style class.
-        return self._original_output_checker.check_output(
-            self, want, got, flags)
+        if self._original_output_checker.check_output(self, want, got, flags):
+            return True
+
+        try:
+            return self._do_check(want, got)
+        except (TypeError, ValueError):
+            return False
+
+    def _do_check(self, want, got):
+        # This should be done exactly as written to correctly handle all of
+        # numpy-comparable objects, strings, and heterogeneous tuples
+        try:
+            if want == got:
+                return True
+        except Exception:
+            pass
+        return np.allclose(want, got, atol=self.atol, rtol=self.rtol)
 
     def output_difference(self, want, got, flags):
         if flags & FIX:
@@ -295,12 +310,6 @@ class OutputChecker(doctest.OutputChecker):
         return self._original_output_checker.output_difference(
             self, want, got, flags)
 
+    def isclose(self, a, b, rtol=1e-05, atol=1e-08, equal_nan=True):
+        return np.isclose(a, b, rtol=rtol, atol=atol, equal_nan=equal_nan)
 
-try:
-    import numpy
-
-    def isclose(a, b, rtol=1e-05, atol=1e-08, equal_nan=True):
-        return numpy.isclose(a, b, rtol=rtol, atol=atol, equal_nan=equal_nan)
-except ImportError:
-    def isclose(a, b, rtol=1e-05, atol=1e-08, equal_nan=True):
-        return abs(a - b) <= atol + rtol * abs(b) or (equal_nan and math.isnan(a) and math.isnan(b))
