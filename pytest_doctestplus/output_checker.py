@@ -95,6 +95,7 @@ class OutputChecker(doctest.OutputChecker):
 
     def find_numbers(self, text):
         """
+        check git user
         Find float strings in text.
         >>> OutputChecker().find_numbers("1.1 foo abr 2.22")
         ['1.1', '2.22']
